@@ -40,6 +40,21 @@
                 </StackPanel>
             </GroupBox>
 
+            <GroupBox Header="关于">
+                <StackPanel>
+                    <TextBlock Text="MouseSim 鼠标键盘模拟器" FontWeight="SemiBold" FontSize="14"
+                               Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0"
+                               Text="{Binding AppVersion, StringFormat=版本 {0}　·　.NET 8 / WPF}" />
+                    <TextBlock Margin="0,10,0,0">
+                        <Hyperlink NavigateUri="https://github.com/MoncozGC/MouseSim"
+                                   RequestNavigate="OpenLink">https://github.com/MoncozGC/MouseSim</Hyperlink>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource HintText}" Margin="0,10,0,0" TextWrapping="Wrap"
+                               Text="录制、重复、批量执行鼠标键盘操作，面向办公自动化与批量重复操作。遇到问题或建议欢迎提 Issue。" />
+                </StackPanel>
+            </GroupBox>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>

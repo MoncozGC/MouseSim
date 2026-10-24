@@ -67,6 +67,9 @@ public class SettingsViewModel : ObservableObject
 
     public string DataFolder => AppDataStore.AppDataDir;
 
+    /// <summary>程序集版本号（关于卡片显示用）。</summary>
+    public string AppVersion => "v" + (typeof(App).Assembly.GetName().Version?.ToString(3) ?? "1.0.0");
+
     private string _savedText = "";
     public string SavedText { get => _savedText; set => SetProperty(ref _savedText, value); }
 

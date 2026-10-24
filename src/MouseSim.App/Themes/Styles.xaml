@@ -201,6 +201,12 @@
         </Setter>
     </Style>
 
+    <Style TargetType="Slider">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <!-- 滑块不接收键盘焦点：点击/拖动后主题仍会在其内部画虚线焦点框，禁用焦点才能根除 -->
+        <Setter Property="Focusable" Value="False" />
+    </Style>
+
     <!-- ===== 左侧导航 TabControl ===== -->
     <Style TargetType="TabControl">
         <Setter Property="Background" Value="Transparent" />

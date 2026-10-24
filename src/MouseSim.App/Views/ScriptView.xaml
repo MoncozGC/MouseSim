@@ -119,6 +119,17 @@
                             <TextBlock Text="毫秒" Style="{StaticResource HintText}" Margin="6,0,0,0"
                                        VerticalAlignment="Center" />
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="重复速度" />
+                            <TextBlock Text="慢" Style="{StaticResource HintText}" Margin="0,0,8,0"
+                                       VerticalAlignment="Center" />
+                            <Slider Minimum="0" Maximum="6" Width="110" IsSnapToTickEnabled="True" TickFrequency="1"
+                                    Value="{Binding SpeedIndex}" VerticalAlignment="Center" FocusVisualStyle="{x:Null}" />
+                            <TextBlock Text="快" Style="{StaticResource HintText}" Margin="8,0,0,0"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding SpeedText}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                       FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                        </StackPanel>
                     </WrapPanel>
                 </DockPanel>
             </Border>

@@ -16,6 +16,9 @@ public sealed class ScriptRunner(IInputSimulator simulator)
         if (script.Actions.Count == 0)
             throw new InvalidOperationException("脚本是空的，请先添加动作");
 
+        // 按脚本自带的速度倍率缩放（倍率 1 时原样返回，无拷贝开销）
+        script = PlaybackScaler.Scale(script);
+
         var sw = durationLimit.HasValue ? System.Diagnostics.Stopwatch.StartNew() : null;
         int loop = 0;
         while (!cancellationToken.IsCancellationRequested && ShouldContinue())

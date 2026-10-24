@@ -149,6 +149,23 @@ public class ScriptViewModel : ObservableObject
     private bool _batchUseDurationRepeat;
     public bool BatchUseDurationRepeat { get => _batchUseDurationRepeat; set => SetProperty(ref _batchUseDurationRepeat, value); }
 
+    // —— 重复速度标尺：索引 ↔ 倍率 ——
+    public static readonly double[] SpeedValues = [0.5, 0.75, 1, 1.5, 2, 3, 4];
+    private static readonly string[] SpeedNames = ["慢", "较慢", "正常", "较快", "快", "很快", "极速"];
+
+    private int _speedIndex = 2; // 默认“正常”
+    public int SpeedIndex
+    {
+        get => _speedIndex;
+        set
+        {
+            if (SetProperty(ref _speedIndex, value))
+                OnPropertyChanged(nameof(SpeedText));
+        }
+    }
+
+    public string SpeedText => $"×{SpeedValues[SpeedIndex]:0.##} {SpeedNames[SpeedIndex]}";
+
     // —— 重复时长（分钟/小时，乘数作为选项值）——
     public IReadOnlyList<OptionItem<int>> DurationUnits { get; } =
     [
@@ -248,14 +265,16 @@ public class ScriptViewModel : ObservableObject
         }
         if (!CommitLoopSettings()) return;
 
+        var speedSuffix = Math.Abs(_selected.Script.SpeedMultiplier - 1.0) > 0.01
+            ? $"，速度 ×{_selected.Script.SpeedMultiplier:0.##}" : "";
         if (_selected.Script.RepeatMinutes > 0)
         {
-            RunStatusText = $"开始执行，重复 {FormatMinutes(_selected.Script.RepeatMinutes)} 后自动停止…";
+            RunStatusText = $"开始执行，重复 {FormatMinutes(_selected.Script.RepeatMinutes)} 后自动停止{speedSuffix}…";
             _runner.Start(_selected.Script, TimeSpan.FromMinutes(_selected.Script.RepeatMinutes));
         }
         else
         {
-            RunStatusText = "开始执行…";
+            RunStatusText = $"开始执行{speedSuffix}…";
             _runner.Start(_selected.Script);
         }
     }
@@ -276,6 +295,8 @@ public class ScriptViewModel : ObservableObject
         StepDelayText = _selected.Script.StepDelayMs.ToString();
         RepeatValueText = _selected.Script.RepeatMinutes > 0 ? _selected.Script.RepeatMinutes.ToString() : "30";
         UseDurationRepeat = _selected.Script.RepeatMinutes > 0;
+        var speedIdx = Array.IndexOf(SpeedValues, _selected.Script.SpeedMultiplier);
+        SpeedIndex = speedIdx >= 0 ? speedIdx : 2;
         RebuildActions();
     }
 
@@ -323,6 +344,7 @@ public class ScriptViewModel : ObservableObject
         }
 
         _selected.Script.StepDelayMs = delay;
+        _selected.Script.SpeedMultiplier = SpeedValues[SpeedIndex];
         return true;
     }
 

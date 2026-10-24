@@ -17,6 +17,7 @@ public class PersistenceTests
             LoopCount = 5,
             StepDelayMs = 120,
             RepeatMinutes = 90,
+            SpeedMultiplier = 2.0,
             Actions =
             [
                 new MouseMoveAction { X = -100, Y = 200 },
@@ -38,6 +39,7 @@ public class PersistenceTests
         Assert.Equal(5, restored.LoopCount);
         Assert.Equal(120, restored.StepDelayMs);
         Assert.Equal(90, restored.RepeatMinutes);
+        Assert.Equal(2.0, restored.SpeedMultiplier);
         Assert.Equal(8, restored.Actions.Count);
 
         var move = Assert.IsType<MouseMoveAction>(restored.Actions[0]);

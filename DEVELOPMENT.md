@@ -40,7 +40,8 @@ mouse/
 │   ├── Engine/                   # —— 执行引擎 ——
 │   │   ├── ScriptRunner.cs       #   按序执行脚本：循环（次数/时长二选一）、每步延迟、可取消
 │   │   ├── ClickerRunner.cs      #   连点循环
-│   │   └── BatchRunner.cs        #   批量：多脚本按序 + 整批循环（次数/时长）
+│   │   ├── BatchRunner.cs        #   批量：多脚本按序 + 整批循环（次数/时长）
+│   │   └── PlaybackScaler.cs     #   回放速度缩放：按倍率生成缩放副本（等待/延迟/拖拽/按住）
 │   ├── Recording/                # —— 录制 ——
 │   │   ├── HookEvents.cs         #   钩子事件记录类型（MouseHookEvent / KeyHookEvent）
 │   │   ├── GlobalInputHook.cs    #   WH_MOUSE_LL / WH_KEYBOARD_LL 低级钩子（专用消息线程）
@@ -89,11 +90,12 @@ mouse/
 │       ├── HotkeyCaptureBox.xaml#    热键录制控件（点按即录，Esc 取消）
 │       └── FloatingStatusWindow.xaml# 悬浮卡（置顶/不抢焦点/整卡点击停止）
 │
-├── tests/MouseSim.Core.Tests/    # ★ xUnit 单元测试（只测 Core，40 个用例）
+├── tests/MouseSim.Core.Tests/    # ★ xUnit 单元测试（只测 Core，45 个用例）
 │   ├── FakeInputSimulator.cs     #   假输入模拟器（记录调用序列）+ DelegateAction（自定义测试动作）
 │   ├── ScriptRunnerTests.cs      #   执行顺序/循环/取消/每步延迟/时长限制
 │   ├── ClickerRunnerTests.cs     #   次数/固定坐标/间隔/双击/计数事件
 │   ├── BatchRunnerTests.cs       #   顺序/整批循环/各自循环/取消/时长
+│   ├── PlaybackScalerTests.cs    #   速度缩放：倍率换算/下限钳制/原脚本不被修改/运行器集成
 │   ├── MacroRecorderTests.cs     #   录制状态机：单击/双击合并/拖拽/滚轮累计/组合键/间隔/自注入排除
 │   ├── PersistenceTests.cs       #   脚本(含全部动作类型)与设置 JSON 往返
 │   └── HotkeyFormatTests.cs      #   热键显示名格式化
@@ -208,7 +210,7 @@ C:/Develop/.Net/dotnet.exe run --project tools/HookProbe
 
 ## 6. 测试
 
-- **范围**：只测 MouseSim.Core（引擎、录制状态机、序列化、格式化），40 个用例，全部无真实输入、毫秒级跑完；
+- **范围**：只测 MouseSim.Core（引擎、录制状态机、序列化、格式化），45 个用例，全部无真实输入、毫秒级跑完；
 - **跑法**：`C:/Develop/.Net/dotnet.exe test MouseSim.sln`；
 - **关键设施**（写新测试前先看这两个）：
   - `FakeInputSimulator`：实现 IInputSimulator，把每次调用记成字符串（`"move:10,20"`、`"press:Control:83"`），断言直接比对字符串序列；
@@ -271,6 +273,7 @@ move publish\lite_tmp\MouseSim.exe publish\MouseSim-lite.exe && rd /s /q publish
 | 改界面配色/控件样式 | `Themes/Styles.xaml`（颜色都是资源字典顶部的 Brush） |
 | 改默认热键 | `Persistence/AppSettings.cs` 三个 HotkeyDefinition + `SettingsViewModel` 恢复默认处 |
 | 改录制规则（如间隔阈值） | `MacroRecorder` 顶部常量（MinGapMs=60、MaxGapMs=60000 等） |
+| 改速度档位（标尺刻度） | `ScriptViewModel.SpeedValues`（UI 档位数组，与 SpeedNames 一一对应）；缩放规则在 `PlaybackScaler` |
 | 改悬浮卡行为 | `Views/FloatingStatusWindow.xaml`（外观）+ `FloatingStatusService`（内容/路由） |
 | 加新页面 | Views 加 UserControl → MainWindow 加 TabItem（记得 `DataContext="{Binding Xxx}"`！）→ MainViewModel 加属性与索引常量 |
 | 改数据存储位置 | `AppDataStore.AppDataDir` |
@@ -292,10 +295,11 @@ C:/Develop/.Net/dotnet.exe test MouseSim.sln    # 全绿
 4. **自注入识别必须用 dwExtraInfo 魔数**（`InputSource.OwnSendMarker`），不能用 INJECTED 标志判断：很多鼠标驱动/改键软件的真实输入也带 INJECTED 标志，按标志过滤会把用户的一切操作录不进来（本项目最严重的一次线上问题）。
 5. **RegisterHotKey 会全局吞键**：热键生效期间，设置页录制新热键时按下的键会被旧热键吃掉。解法见 `HotkeyCaptureArbiter`：进入录制先注销全部热键，退出再恢复。
 6. **热键注册要逐个独立尝试**：一个失败不能中断其余注册，否则出现"一个冲突、全部失灵"（AppServices.ApplyHotkeysAsync 的 TryRegister 模式）。
-7. **WPF 默认虚线焦点框**：按 Alt/Tab 会给焦点控件画虚线框，所有交互控件样式里 `FocusVisualStyle={x:Null}`。
+7. **WPF 默认虚线焦点框**：按 Alt/Tab 会给焦点控件画虚线框。有两层来源：①FocusVisualStyle——所有交互控件样式里置 `{x:Null}`；②**主题模板内部画的焦点框**（Slider、CheckBox、RadioButton 都有）——属性压不掉，必须 `Focusable=False` 禁止键盘焦点根除（鼠标操作不受影响）。
 8. **中文字符串/注释的编码坑**：C# 字符串里的中文引号必须用直引号包裹（弯引号""会截断字符串）；PowerShell 脚本含中文必须存 UTF-8 **带 BOM**，否则 PS5 按 GBK 解析、注释尾字节吞换行导致下一行代码被并入注释。
-9. **单文件打包改程序集名**：见 §7.2 的临时目录方案。
-10. **权限边界（UIPI）**：模拟输入无法操作以管理员运行的程序，MouseSim 需同级提权；这是系统机制，代码层无解，用户文档要写明。
+9. **WPF `{Binding}` 不能绑定静态字段**：ItemsSource 等绑定目标必须是**实例属性**，静态字段绑定会静默失败（控件为空但不报错）。数据想静态共享时用"静态数据 + 实例属性暴露"（参考 ActionEditViewModel.TypeOptions 的注释）；纯静态场景用 `{x:Static}` 扩展语法（参考 WpfKeys.SelectableKeys）。
+10. **单文件打包改程序集名**：见 §7.2 的临时目录方案。
+11. **权限边界（UIPI）**：模拟输入无法操作以管理员运行的程序，MouseSim 需同级提权；这是系统机制，代码层无解，用户文档要写明。
 
 ## 10. 路线图候选
 

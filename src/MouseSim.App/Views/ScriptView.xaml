@@ -1,0 +1,187 @@
+<UserControl x:Class="MouseSim.App.Views.ScriptView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="4,2">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="252" />
+            <ColumnDefinition Width="12" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- 左：脚本列表 + 批量运行 -->
+        <Border Grid.Column="0" Background="{StaticResource CardBackBrush}"
+                BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" CornerRadius="8">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="我的脚本" FontWeight="SemiBold" FontSize="12.5"
+                           Foreground="{StaticResource TextSecondaryBrush}" Margin="14,10,14,8" />
+                <!-- 批量运行：默认折叠，点击展开 -->
+                <Expander DockPanel.Dock="Bottom" Header="批量运行 ▸ 点此展开配置" IsExpanded="False"
+                          Margin="8,4,8,8">
+                    <StackPanel Margin="2,8,2,0">
+                        <TextBlock Style="{StaticResource HintText}" TextWrapping="Wrap"
+                                   Text="勾选上面列表中的脚本，按顺序批量执行（F8 随时停止）。删除按钮同样作用于勾选的脚本。" />
+                        <WrapPanel Margin="0,8,0,0">
+                            <Button Style="{StaticResource ToolButton}" Content="全选" MinWidth="46"
+                                    Command="{Binding SelectAllCommand}" />
+                            <Button Style="{StaticResource ToolButton}" Content="清空" MinWidth="46" Margin="6,0,0,0"
+                                    Command="{Binding ClearChecksCommand}" />
+                        </WrapPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <RadioButton GroupName="batchRepeatMode" Content="整批次数" Width="86" Margin="0"
+                                         VerticalAlignment="Center"
+                                         IsChecked="{Binding BatchUseDurationRepeat, Converter={StaticResource InverseBool}}" />
+                            <TextBox Text="{Binding BatchLoopText, UpdateSourceTrigger=PropertyChanged}" Width="44"
+                                     IsEnabled="{Binding BatchUseDurationRepeat, Converter={StaticResource InverseBool}}" />
+                            <TextBlock Text="（0=无限）" Style="{StaticResource HintText}" Margin="6,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <RadioButton GroupName="batchRepeatMode" Content="重复时长" Width="86" Margin="0"
+                                         VerticalAlignment="Center"
+                                         IsChecked="{Binding BatchUseDurationRepeat}" />
+                            <TextBox Text="{Binding BatchRepeatValueText, UpdateSourceTrigger=PropertyChanged}" Width="44"
+                                     IsEnabled="{Binding BatchUseDurationRepeat}" />
+                            <ComboBox ItemsSource="{Binding DurationUnits}" SelectedItem="{Binding SelectedBatchRepeatUnit}"
+                                      DisplayMemberPath="Label" Width="64" Margin="4,0,0,0"
+                                      IsEnabled="{Binding BatchUseDurationRepeat}" />
+                        </StackPanel>
+                        <Button Style="{StaticResource PrimaryButton}" Content="▶ 批量运行"
+                                Command="{Binding BatchRunCommand}" Margin="0,12,0,0" HorizontalAlignment="Left"
+                                MinWidth="150" />
+                    </StackPanel>
+                </Expander>
+                <WrapPanel DockPanel.Dock="Bottom" Margin="8,6,8,6">
+                    <Button Style="{StaticResource ToolButton}" Content="新建" MinWidth="46" Command="{Binding NewCommand}"
+                            Margin="0,0,6,6" />
+                    <Button Style="{StaticResource ToolButton}" Content="复制" MinWidth="46" Margin="0,0,6,6"
+                            Command="{Binding DuplicateCommand}" />
+                    <Button Style="{StaticResource ToolButton}" Content="重命名" MinWidth="56" Margin="0,0,6,6"
+                            Command="{Binding RenameCommand}" />
+                    <Button Style="{StaticResource ToolButton}" Content="删除" MinWidth="46" Margin="0,0,0,6"
+                            Command="{Binding DeleteCommand}" />
+                </WrapPanel>
+                <ListBox ItemsSource="{Binding Scripts}" SelectedItem="{Binding Selected}" Margin="6,0"
+                         Padding="4,0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" ToolTip="{Binding DisplayName}">
+                                <CheckBox IsChecked="{Binding IsChecked}" VerticalAlignment="Center" Focusable="False" />
+                                <TextBlock Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- 右：编辑与运行 -->
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- 运行条（始终可用，停止按钮在运行时也要能点） -->
+            <Border Grid.Row="0" Background="{StaticResource CardBackBrush}"
+                    BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" CornerRadius="8"
+                    Padding="14,10" Margin="0,0,0,10">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource PrimaryButton}" Content="{Binding RunButtonText}" Command="{Binding RunCommand}"
+                                VerticalAlignment="Center" />
+                        <Button Style="{StaticResource DangerButton}" Content="{Binding StopButtonText}" Command="{Binding StopCommand}"
+                                Margin="10,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <WrapPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Margin="0,3,14,3">
+                            <RadioButton GroupName="repeatMode" Content="重复次数" Width="86" Margin="0"
+                                         VerticalAlignment="Center"
+                                         IsChecked="{Binding UseDurationRepeat, Converter={StaticResource InverseBool}}" />
+                            <TextBox Text="{Binding LoopText, UpdateSourceTrigger=PropertyChanged}" Width="48"
+                                     IsEnabled="{Binding UseDurationRepeat, Converter={StaticResource InverseBool}}" />
+                            <TextBlock Text="（0=无限）" Style="{StaticResource HintText}" Margin="6,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,14,3">
+                            <RadioButton GroupName="repeatMode" Content="重复时长" Width="86" Margin="0"
+                                         VerticalAlignment="Center"
+                                         IsChecked="{Binding UseDurationRepeat}" />
+                            <TextBox Text="{Binding RepeatValueText, UpdateSourceTrigger=PropertyChanged}" Width="48"
+                                     IsEnabled="{Binding UseDurationRepeat}" />
+                            <ComboBox ItemsSource="{Binding DurationUnits}" SelectedItem="{Binding SelectedRepeatUnit}"
+                                      DisplayMemberPath="Label" Width="64" Margin="4,0,0,0"
+                                      IsEnabled="{Binding UseDurationRepeat}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="每步延迟" Width="70" Margin="16,0,0,0" />
+                            <TextBox Text="{Binding StepDelayText, UpdateSourceTrigger=PropertyChanged}" Width="48" />
+                            <TextBlock Text="毫秒" Style="{StaticResource HintText}" Margin="6,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </WrapPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- 编辑区（运行中禁用） -->
+            <Grid Grid.Row="1" IsEnabled="{Binding IsEditingEnabled}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <WrapPanel Grid.Row="0" Margin="2,0,0,8">
+                    <Button x:Name="AddButton" Style="{StaticResource ToolButton}" Content="＋ 添加" FontWeight="SemiBold"
+                            Click="AddButton_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="鼠标点击" Command="{Binding AddActionCommand}" CommandParameter="click" />
+                                <MenuItem Header="鼠标移动" Command="{Binding AddActionCommand}" CommandParameter="move" />
+                                <MenuItem Header="鼠标拖拽" Command="{Binding AddActionCommand}" CommandParameter="drag" />
+                                <MenuItem Header="滚轮" Command="{Binding AddActionCommand}" CommandParameter="scroll" />
+                                <MenuItem Header="按键 / 组合键" Command="{Binding AddActionCommand}" CommandParameter="keypress" />
+                                <MenuItem Header="按住按键" Command="{Binding AddActionCommand}" CommandParameter="keyhold" />
+                                <MenuItem Header="输入文本" Command="{Binding AddActionCommand}" CommandParameter="text" />
+                                <MenuItem Header="等待" Command="{Binding AddActionCommand}" CommandParameter="delay" />
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                    <Button Style="{StaticResource ToolButton}" Content="编辑" Margin="6,0,0,0"
+                            Command="{Binding EditActionCommand}" />
+                    <Button Style="{StaticResource ToolButton}" Content="删除" Margin="6,0,0,0"
+                            Command="{Binding DeleteActionCommand}" />
+                    <Button Style="{StaticResource ToolButton}" Content="上移" Margin="6,0,0,0"
+                            Command="{Binding MoveUpCommand}" />
+                    <Button Style="{StaticResource ToolButton}" Content="下移" Margin="6,0,0,0"
+                            Command="{Binding MoveDownCommand}" />
+                </WrapPanel>
+
+                <Border Grid.Row="1" Background="{StaticResource CardBackBrush}"
+                        BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" CornerRadius="8">
+                    <ListBox ItemsSource="{Binding CurrentActions}" SelectedIndex="{Binding SelectedActionIndex}"
+                             Margin="4" HorizontalContentAlignment="Stretch">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Index}" Width="26" VerticalAlignment="Center"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <Border Background="{StaticResource AccentLightBrush}" CornerRadius="4"
+                                            Padding="7,2" MinWidth="38" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TypeLabel}" Foreground="{StaticResource AccentBrush}"
+                                                   FontSize="11.5" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Description}" Margin="10,0,8,0" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <TextBlock Grid.Row="2" Text="{Binding RunStatusText}" Margin="2,8,0,2"
+                           Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

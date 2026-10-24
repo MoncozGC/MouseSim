@@ -13,7 +13,9 @@ public sealed record ActionTypeInfo(string Key, string Label);
 /// 按当前类型显示对应分区，确定时校验并构建动作对象。</summary>
 public class ActionEditViewModel : ObservableObject
 {
-    public static readonly IReadOnlyList<ActionTypeInfo> TypeOptions =
+    // 注意：WPF 的 {Binding} 只能绑定实例属性，静态字段绑不上（曾导致下拉框为空），
+    // 因此这里用静态数据 + 实例属性暴露的方式。
+    private static readonly IReadOnlyList<ActionTypeInfo> AllTypes =
     [
         new("click", "鼠标点击"),
         new("move", "鼠标移动"),
@@ -25,6 +27,8 @@ public class ActionEditViewModel : ObservableObject
         new("delay", "等待"),
     ];
 
+    public IReadOnlyList<ActionTypeInfo> TypeOptions => AllTypes;
+
     public IReadOnlyList<EnumOption<MouseButton>> ButtonOptions { get; } =
     [
         new(MouseButton.Left, "左键"),
@@ -34,10 +38,11 @@ public class ActionEditViewModel : ObservableObject
 
     public ActionEditViewModel(IAction action)
     {
+        _selectedType = TypeOptions[0];
         LoadFrom(action);
     }
 
-    private ActionTypeInfo _selectedType = TypeOptions[0];
+    private ActionTypeInfo _selectedType = null!;
     public ActionTypeInfo SelectedType
     {
         get => _selectedType;

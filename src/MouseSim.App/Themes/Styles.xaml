@@ -139,12 +139,19 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <!-- 主题模板内部仍会画虚线焦点框，禁用键盘焦点根除（鼠标操作不受影响） -->
+        <Setter Property="Focusable" Value="False" />
     </Style>
 
     <Style TargetType="RadioButton">
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="Margin" Value="0,0,14,0" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Focusable" Value="False" />
+    </Style>
+
+    <Style TargetType="Expander">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     </Style>
 

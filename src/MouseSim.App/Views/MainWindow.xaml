@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:v="clr-namespace:MouseSim.App.Views"
-        Title="MouseSim — 鼠标键盘模拟器"
+        Title="MouseSim"
         Icon="pack://application:,,,/Assets/app.ico"
         Height="660" Width="980" MinHeight="580" MinWidth="860"
         WindowStartupLocation="CenterScreen"

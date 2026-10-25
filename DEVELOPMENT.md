@@ -252,6 +252,24 @@ move publish\lite_tmp\MouseSim.exe publish\MouseSim-lite.exe && rd /s /q publish
 
 改图标设计：编辑 `tools/icon/make-icon.ps1`（纯 GDI+ 绘制，坐标即设计），运行后把 `app.ico` 拷到 `src/MouseSim.App/Assets/` 覆盖，重新打包即可。图标通过 csproj 的 `ApplicationIcon`（exe 文件图标）和 `Resource`（窗口标题栏）双路生效。
 
+### 7.4 发布 Release 流程
+
+1. 确认构建与测试全绿：`build` 0 错误 + `test` 全过；
+2. **先关闭正在运行的 MouseSim**（文件锁会让打包失败，且中断的打包会留下损坏的半成品 exe——发现体积异常就删掉重跑）；
+3. 双击 `publish.bat`，确认产出两个 exe 且完整版 ~68MB；
+4. 打 tag 并推送：`git tag vX.Y.Z && git push origin vX.Y.Z`；
+5. GitHub 网页 → Releases → Draft a new release → 选择已推送的 tag → 标题与说明（结构：新增 / 修复 / 下载表 / 文档链接，参考 v1.0.0 与 v1.1.0 的发布说明）→ **拖入两个 exe 附件** → Publish。
+
+**版本号约定**（semver）：`主.次.修订`——不兼容改动才动主号，新功能加次号，纯修 bug 加修订号。测试版发 `vX.Y.Z-beta.N` 并在发布时**勾选 Pre-release**（不会成为 Latest，正式版发布后自动让位）。
+
+### 7.5 Git 提交规范
+
+- **message 格式**：`类型(范围): 中文描述`，类型取 `feat`（新功能）/ `fix`（修复）/ `docs` / `test` / `chore`（构建、工具、杂务）/ `refactor`；范围用 `core` / `app` 或省略。要点写在 message 正文（为什么/包含什么）；
+- **粒度**：一次提交 = 一个完整可编译的改动单元（模块内聚），不要"顺手"把无关改动混进同一提交；
+- **常用命令**：`git status`（看状态）→ `git add <文件>`（精确暂存，别无脑 `add .`）→ `git commit -m "fix(app): xxx"` → `git push`；`git log --oneline` 看历史；
+- 编译产物（bin/obj/publish/）与 `.idea/` 已被 .gitignore 挡住，不会误传；
+- 修完 bug 的提交已推送但内容有误时，个人仓库可 `git commit --amend` 后 `git push --force-with-lease` 修正（保持历史干净）。
+
 ## 8. 二次开发指南
 
 ### 8.1 新增一种动作类型（最常见扩展，以"等待窗口出现"为例）
